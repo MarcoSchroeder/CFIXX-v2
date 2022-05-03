@@ -1,0 +1,12 @@
+.vscode/
+clang/
+compiler-rt/
+libcxx-build/
+libcxx/
+libcxxabi-build/
+libcxxabi/
+libunwind-build/
+libunwind/
+llvm/
+release-build/
+release-install/
