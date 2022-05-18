@@ -410,14 +410,16 @@ process_specific_init (void)
       exit (EXIT_FAILURE);
     }
 
-  enable_mpx ();
+  // CFIXX-v2 start: disable MPX runtime
+  // enable_mpx ();
 
-  if (prctl (43, 0, 0, 0, 0))
-    {
-      __mpxrt_print (VERB_ERROR, "No MPX support\n");
-      disable_mpx ();
-      return false;
-    }
+  // if (prctl (43, 0, 0, 0, 0))
+  //   {
+  //     __mpxrt_print (VERB_ERROR, "No MPX support\n");
+  //     disable_mpx ();
+  //     return false;
+  //   }
+  // CFIXX-v2 end
 
   return true;
 }
@@ -428,11 +430,13 @@ process_specific_finish (void)
   //if (!check_mpx_support ())
   //  return false;
 
-  if (prctl (44, 0, 0, 0, 0))
-    {
-      __mpxrt_print (VERB_ERROR, "No MPX support\n");
-      return false;
-    }
+  // CFIXX-v2 start: disable MPX runtime
+  // if (prctl (44, 0, 0, 0, 0))
+  //   {
+  //     __mpxrt_print (VERB_ERROR, "No MPX support\n");
+  //     return false;
+  //   }
+  // CFIXX-v2 end
 
   munmap (l1base, MPX_L1_SIZE);
 
