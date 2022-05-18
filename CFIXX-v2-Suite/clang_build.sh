@@ -1,1 +1,0 @@
-../release-install/bin/clang++ cfixx_v2_suite.cpp -o suite_clang -O2 -g -std=c++11

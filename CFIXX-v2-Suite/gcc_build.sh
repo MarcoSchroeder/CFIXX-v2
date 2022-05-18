@@ -1,1 +1,0 @@
-g++ cfixx_v2_suite.cpp -o suite_gcc -O2 -g -std=c++11
