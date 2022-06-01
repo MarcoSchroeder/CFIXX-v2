@@ -1210,7 +1210,7 @@ llvm::Value *ItaniumCXXABI::EmitTypeid(CodeGenFunction &CGF,
   auto *ClassDecl =
       cast<CXXRecordDecl>(SrcRecordTy->getAs<RecordType>()->getDecl());
   llvm::Value *Value =
-      CGF.GetVTablePtr(ThisPtr, StdTypeInfoPtrTy->getPointerTo(), ClassDecl);
+      CGF.GetVTablePtrCFIXX(ThisPtr, StdTypeInfoPtrTy->getPointerTo(), ClassDecl);
 
   // Load the type info.
   Value = CGF.Builder.CreateConstInBoundsGEP1_64(Value, -1ULL);
