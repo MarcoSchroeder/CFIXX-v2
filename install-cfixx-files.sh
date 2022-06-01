@@ -77,3 +77,7 @@ ln -s $src/compiler-rt-cfixx $crtlib/cfixx
 
 rm libcxxabi/test/CMakeLists.txt
 ln -s $src/libcxxabi-test-CMakeLists.txt libcxxabi/test/CMakeLists.txt
+
+#libcxxabi
+rm libcxxabi/src/private_typeinfo.cpp
+ln -s $src/libcxxabi-cfixx/private_typeinfo.cpp libcxxabi/src/private_typeinfo.cpp
