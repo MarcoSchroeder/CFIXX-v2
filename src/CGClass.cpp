@@ -2504,6 +2504,11 @@ void CodeGenFunction::InitializeVTablePointer(const VPtr &Vptr) {
   llvm::Value *thisPtr = Builder.CreatePtrToInt(VTableField.getPointer(), CGM.Int64Ty);
   llvm::Value *vtablePtr = Builder.CreateBitCast(VTableAddressPoint, CGM.VoidPtrTy);
 
+  llvm::FunctionType *my_FTy =
+      llvm::FunctionType::get(CGM.VoidTy, CGM.VoidPtrTy, false);
+  llvm::Constant *my_F = CGM.CreateRuntimeFunction(my_FTy, "cfixxEnableMetadataWrites");
+  Builder.CreateCall(my_F, {thisPtr});
+
   //first level index
   llvm::Value *tmp = Builder.CreateLShr(thisPtr, 26);
   tmp = Builder.CreateAnd(tmp, 4194303);
@@ -2531,6 +2536,8 @@ void CodeGenFunction::InitializeVTablePointer(const VPtr &Vptr) {
   llvm::BasicBlock *hotPath = createBasicBlock("hotPath");
   Builder.CreateCondBr(tmp, coldPath, hotPath);
 
+
+  llvm::Constant *my_F2 = CGM.CreateRuntimeFunction(my_FTy, "cfixxDisbleMetadataWrites");
   /*Cold Path Code*/
   EmitBlock(coldPath);
   llvm::FunctionType *FTy =
@@ -2538,6 +2545,7 @@ void CodeGenFunction::InitializeVTablePointer(const VPtr &Vptr) {
   llvm::Constant *F = CGM.CreateRuntimeFunction(FTy, "cfixxSlow");
   tmp = Builder.CreateCall(F, {idx1});
   llvm::Value *slowReturn = Builder.CreateBitCast(tmp, CGM.VoidPtrTy->getPointerTo());
+  Builder.CreateCall(my_F2, {thisPtr});
 
   /*Hot Path Code*/
   EmitBlock(hotPath);
@@ -2551,6 +2559,7 @@ void CodeGenFunction::InitializeVTablePointer(const VPtr &Vptr) {
   F = CGM.CreateRuntimeFunction(FTy, "cfixxFakeMetadataWrite");
   llvm::CallInst *fake = Builder.CreateCall(F, {vtablePtr, tmp});
   fake->setTailCallKind(llvm::CallInst::TailCallKind::TCK_NoTail);
+  Builder.CreateCall(my_F2, {thisPtr});
   //*/
   /*NHB CFIXX modification end*/
 }

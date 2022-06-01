@@ -59,6 +59,14 @@ void cfixxInitialization(){
   cfixxTableEnd = (void*)cfixxLookupStart + len/sizeof(void*);
 
   //fprintf(stderr, "[CFIXX Log] Enabled. lookup: %p\tlen: %lx\n", (void*)cfixxLookupStart, len);
+
+  //Protect entire table
+  size_t tableLength = (size_t)cfixxTableEnd - (size_t)cfixxLookupStart;
+  if (mprotect((void *)cfixxLookupStart, tableLength, PROT_READ))
+  {
+    fprintf(stderr, "[CFIXX ERROR] mprotext1 failed\n");
+    exit(cfixxExitError);
+  }
 }
 
 //__attribute__((noinline))
@@ -82,9 +90,13 @@ void *cfixxSlow(unsigned long idx1){
 void cfixxFakeMetadataWrite(void *, void **);
 void cfixxFakeMPXCheck(void *);
 
+void cfixxEnableMetadataWrites(void *thisPtr);
+void cfixxDisbleMetadataWrites(void *thisPtr);
+
 void cfixxSetVTablePtr(void *thisPtr, void *vtablePtr){
+  cfixxEnableMetadataWrites(thisPtr);
   /*Do the 2 level lookup*/
-  //get the pointer to the second level table from the top level
+  // get the pointer to the second level table from the top level
   unsigned long idx1 = (unsigned long)thisPtr >> 26 & mask22;
   void **level2 = ((void***)cfixxLookupStart)[idx1];
 
@@ -98,7 +110,8 @@ void cfixxSetVTablePtr(void *thisPtr, void *vtablePtr){
 
   //store the metadata
   level2[idx2] = vtablePtr;
-  
+  cfixxDisbleMetadataWrites(thisPtr);
+
   return;
 }
 
@@ -126,6 +139,28 @@ void cfixxDtor(void *thisPtr){
   void **level2 = ((void ***)cfixxLookupStart)[idx1];
   level2[idx2] = NULL;
   return;
+}
+
+void cfixxEnableMetadataWrites(void* thisPtr)
+{
+  size_t tableLength = (size_t)cfixxTableEnd - (size_t)cfixxLookupStart;
+  if (mprotect((void *)cfixxLookupStart, tableLength, PROT_WRITE))
+  {
+    fprintf(stderr, "[CFIXX ERROR] mprotext2 failed\n");
+    exit(cfixxExitError);
+  }
+
+}
+
+void cfixxDisbleMetadataWrites(void* thisPtr)
+{
+  size_t tableLength = (size_t)cfixxTableEnd - (size_t)cfixxLookupStart;
+  if (mprotect((void *)cfixxLookupStart, tableLength, PROT_READ))
+  {
+    fprintf(stderr, "[CFIXX ERROR] mprotext3 failed\n");
+    exit(cfixxExitError);
+  }
+
 }
 
 __attribute__((section(".preinit_array"), used)) void (*_cfixx_preinit)(void) = cfixxInitialization;
