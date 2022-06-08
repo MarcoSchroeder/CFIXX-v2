@@ -34,6 +34,8 @@ static unsigned long cfixxSecondLevelTables = 100UL;
 //this trade is only an issue if we want to "fail open"
 //void **cfixxCold = NULL;
 
+#define CFIXX_PROTECT_METADATA
+
 //__attribute__((constructor(0)))
 void cfixxInitialization(){
   size_t len = two22*sizeof(void*) + two23*sizeof(void*)*cfixxSecondLevelTables;
@@ -61,12 +63,14 @@ void cfixxInitialization(){
   //fprintf(stderr, "[CFIXX Log] Enabled. lookup: %p\tlen: %lx\n", (void*)cfixxLookupStart, len);
 
   //Protect entire table
+  #ifdef CFIXX_PROTECT_METADATA
   size_t tableLength = (size_t)cfixxTableEnd - (size_t)cfixxLookupStart;
   if (mprotect((void *)cfixxLookupStart, tableLength, PROT_READ))
   {
     fprintf(stderr, "[CFIXX ERROR] mprotext1 failed\n");
     exit(cfixxExitError);
   }
+  #endif
 }
 
 //__attribute__((noinline))
@@ -143,24 +147,27 @@ void cfixxDtor(void *thisPtr){
 
 void cfixxEnableMetadataWrites(void* thisPtr)
 {
+  #ifdef CFIXX_PROTECT_METADATA
+
   size_t tableLength = (size_t)cfixxTableEnd - (size_t)cfixxLookupStart;
   if (mprotect((void *)cfixxLookupStart, tableLength, PROT_WRITE))
   {
     fprintf(stderr, "[CFIXX ERROR] mprotext2 failed\n");
     exit(cfixxExitError);
   }
-
+  #endif
 }
 
 void cfixxDisbleMetadataWrites(void* thisPtr)
 {
+  #ifdef CFIXX_PROTECT_METADATA
   size_t tableLength = (size_t)cfixxTableEnd - (size_t)cfixxLookupStart;
   if (mprotect((void *)cfixxLookupStart, tableLength, PROT_READ))
   {
     fprintf(stderr, "[CFIXX ERROR] mprotext3 failed\n");
     exit(cfixxExitError);
   }
-
+  #endif
 }
 
 __attribute__((section(".preinit_array"), used)) void (*_cfixx_preinit)(void) = cfixxInitialization;
