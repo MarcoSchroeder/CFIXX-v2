@@ -1802,7 +1802,7 @@ void X86AsmPrinter::EmitInstruction(const MachineInstr *MI) {
   MCInst TmpInst;
   MCInstLowering.Lower(MI, TmpInst);
 
-#ifdef NONONONO
+#ifdef CFIXX_ENABLE_MPX
   /*NHB CFIXX MPX Modification*/
   if(MI->mayStore()){
  	  switch (TmpInst.getOpcode()) {
