@@ -3,3 +3,4 @@ build/cfixx_clang_all
 build/cfixx_clang_dynamic_dispatch
 build/cfixx_clang_typeid
 build/cfixx_clang_metadata_attack
+build/gcc_dynamic_cast_complex
