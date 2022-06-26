@@ -1,6 +1,8 @@
 add_custom_target(cfixx)
 
-set(CFIXX_SOURCES cfixx.c mpxrt.c mpxrt-utils.c)
+#set(CFIXX_SOURCES cfixx.c mpxrt.c mpxrt-utils.c)
+set(CFIXX_SOURCES cfixx.c)
+
 set(CFIXX_FLAGS ${SANITIZER_COMMON_FLAGS} "-pthread")
 
 include_directories(..)
