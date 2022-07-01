@@ -2,8 +2,6 @@
 
 #include <cstring>
 
-void dynamic_dispatch_attack();
-
 int main()
 {
         std::printf("Before metadata attack\n");
