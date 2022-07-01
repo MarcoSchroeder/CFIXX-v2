@@ -2506,7 +2506,7 @@ void CodeGenFunction::InitializeVTablePointer(const VPtr &Vptr) {
 
   llvm::FunctionType *my_FTy =
       llvm::FunctionType::get(CGM.VoidTy, CGM.VoidPtrTy, false);
-  llvm::Constant *my_F = CGM.CreateRuntimeFunction(my_FTy, "cfixxEnableMetadataWrites");
+  llvm::Constant *my_F = CGM.CreateRuntimeFunction(my_FTy, "cfixxEnableMetadataWritesAll");
   Builder.CreateCall(my_F, {thisPtr});
 
   //first level index
@@ -2537,7 +2537,7 @@ void CodeGenFunction::InitializeVTablePointer(const VPtr &Vptr) {
   Builder.CreateCondBr(tmp, coldPath, hotPath);
 
 
-  llvm::Constant *my_F2 = CGM.CreateRuntimeFunction(my_FTy, "cfixxDisbleMetadataWrites");
+  llvm::Constant *my_F2 = CGM.CreateRuntimeFunction(my_FTy, "cfixxDisableMetadataWritesAll");
   /*Cold Path Code*/
   EmitBlock(coldPath);
   llvm::FunctionType *FTy =
