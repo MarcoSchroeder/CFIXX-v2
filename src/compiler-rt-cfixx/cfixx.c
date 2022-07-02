@@ -27,6 +27,9 @@
 #define cfixxLookupStart 0x7f0104846000UL
 #define cfixxColdStart 0x7f53feacb000UL
 
+#define CFIXX_PROTECT_METADATA_MPROTECT
+#define CFIXX_PROTECT_METADATA_PKEYS
+
 void cfixxEnableMetadataWrites(void *thisPtr);
 void cfixxDisableMetadataWrites(void *thisPtr);
 
@@ -39,11 +42,16 @@ static void **cfixxNextSecondLevel = NULL;
 void **cfixxTableEnd = NULL;
 static unsigned long cfixxSecondLevelTables = 100UL;
 
+#ifdef CFIXX_PROTECT_METADATA_PKEYS
+int pkey;
+#endif
+
 //trade some space for one fewer if check on the hot path
 //this trade is only an issue if we want to "fail open"
 //void **cfixxCold = NULL;
 
-#define CFIXX_PROTECT_METADATA
+
+
 
 //__attribute__((constructor(0)))
 void cfixxInitialization(){
@@ -70,7 +78,9 @@ void cfixxInitialization(){
   cfixxTableEnd = (void*)cfixxLookupStart + len/sizeof(void*);
 
   //fprintf(stderr, "[CFIXX Log] Enabled. lookup: %p\tlen: %lx\n", (void*)cfixxLookupStart, len);
-
+  #ifdef CFIXX_PROTECT_METADATA_PKEYS
+  pkey = pkey_alloc(0, PKEY_DISABLE_WRITE);
+  #endif
   cfixxDisableMetadataWritesAll();
 }
 
@@ -169,7 +179,7 @@ MetadataAddresses getMetadataAddresses(void* this_ptr) {
 void
 cfixxEnableMetadataWrites(void *thisPtr)
 {
-  #ifdef CFIXX_PROTECT_METADATA
+  #ifdef CFIXX_PROTECT_METADATA_MRPOTECT
   MetadataAddresses adr = getMetadataAddresses(thisPtr);
   fprintf(stderr, "[CFIXX LOG] this ptr: %lu\n", (size_t)thisPtr);
   fprintf(stderr, "[CFIXX ERROR] cfixxEnableMetadataWrites specific: level 1: %lu\tlevel2: %lu\n", (size_t)adr.level1, (size_t)adr.level2);
@@ -181,6 +191,23 @@ cfixxEnableMetadataWrites(void *thisPtr)
   }
 
   if (mprotect(adr.level2, sysconf(_SC_PAGE_SIZE), PROT_WRITE))
+  {
+    fprintf(stderr, "[CFIXX ERROR] cfixxEnableMetadataWrites specific - mprotect level2 failed with %s\n", strerror(errno));
+    exit(cfixxExitError);
+  }
+  #endif
+  #ifdef CFIXX_PROTECT_METADATA_PKEYS
+  MetadataAddresses adr = getMetadataAddresses(thisPtr);
+  fprintf(stderr, "[CFIXX LOG] this ptr: %lu\n", (size_t)thisPtr);
+  fprintf(stderr, "[CFIXX ERROR] cfixxEnableMetadataWrites specific: level 1: %lu\tlevel2: %lu\n", (size_t)adr.level1, (size_t)adr.level2);
+
+  if (pkey_mprotect(adr.level1, sysconf(_SC_PAGE_SIZE), PROT_WRITE, pkey))
+  {
+    fprintf(stderr, "[CFIXX ERROR] cfixxEnableMetadataWrites specific - mprotect level1 failed with %s\n", strerror(errno));
+    exit(cfixxExitError);
+  }
+
+  if (pkey_mprotect(adr.level2, sysconf(_SC_PAGE_SIZE), PROT_WRITE, pkey))
   {
     fprintf(stderr, "[CFIXX ERROR] cfixxEnableMetadataWrites specific - mprotect level2 failed with %s\n", strerror(errno));
     exit(cfixxExitError);
@@ -206,6 +233,21 @@ cfixxDisableMetadataWrites(void *thisPtr)
     exit(cfixxExitError);
   }
   #endif
+  #ifdef CFIXX_PROTECT_METADATA_PKEYS
+  MetadataAddresses adr = getMetadataAddresses(thisPtr);
+
+  if (pkey_mprotect(adr.level1, sysconf(_SC_PAGE_SIZE), PROT_READ, pkey))
+  {
+    fprintf(stderr, "[CFIXX ERROR] cfixxDisableMetadataWrites specific - mprotect level1 failed\n");
+    exit(cfixxExitError);
+  }
+
+  if (pkey_mprotect(adr.level2, sysconf(_SC_PAGE_SIZE), PROT_READ, pkey))
+  {
+    fprintf(stderr, "[CFIXX ERROR] cfixxDisableMetadataWrites specific - mprotect level2 failed\n");
+    exit(cfixxExitError);
+  }
+  #endif
 }
 
 void cfixxEnableMetadataWritesAll()
@@ -219,6 +261,14 @@ void cfixxEnableMetadataWritesAll()
     exit(cfixxExitError);
   }
   #endif
+  #ifdef CFIXX_PROTECT_METADATA_PKEYS
+  size_t tableLength = (size_t)cfixxTableEnd - (size_t)cfixxLookupStart;
+  if (pkey_mprotect((void *)cfixxLookupStart, tableLength, PROT_WRITE, pkey))
+  {
+    fprintf(stderr, "[CFIXX ERROR] cfixxEnableMetadataWrites mprotect failed\n");
+    exit(cfixxExitError);
+  }
+  #endif
 }
 
 void cfixxDisableMetadataWritesAll()
@@ -226,6 +276,14 @@ void cfixxDisableMetadataWritesAll()
   #ifdef CFIXX_PROTECT_METADATA
   size_t tableLength = (size_t)cfixxTableEnd - (size_t)cfixxLookupStart;
   if (mprotect((void *)cfixxLookupStart, tableLength, PROT_READ))
+  {
+    fprintf(stderr, "[CFIXX ERROR] cfixxDisableMetadataWrites mprotect failed\n");
+    exit(cfixxExitError);
+  }
+  #endif
+  #ifdef CFIXX_PROTECT_METADATA_PKEYS
+  size_t tableLength = (size_t)cfixxTableEnd - (size_t)cfixxLookupStart;
+  if (pkey_mprotect((void *)cfixxLookupStart, tableLength, PROT_READ, pkey))
   {
     fprintf(stderr, "[CFIXX ERROR] cfixxDisableMetadataWrites mprotect failed\n");
     exit(cfixxExitError);
