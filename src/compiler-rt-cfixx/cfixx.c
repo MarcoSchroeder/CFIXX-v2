@@ -164,7 +164,7 @@ MetadataAddresses getMetadataAddresses(void* this_ptr) {
   size_t index1 = (size_t)this_ptr >> 26 & mask22;
   size_t index2 = (size_t)this_ptr >> 3 & mask23;
   size_t *level1 = (size_t*)(cfixxLookupStart + index1);
-  size_t *level2_base = (size_t*)level1[index1];
+  size_t *level2_base = (size_t*)(((size_t*)cfixxLookupStart)[index1]);
   size_t *level2 = level2_base + index2;
 
   long pagesize = sysconf(_SC_PAGE_SIZE);
