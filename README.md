@@ -16,6 +16,8 @@ Disaptch at NDSS '18.
 
 **cfixxv2:**
 
+Some files from the original repo needed to be fixed to prevent compilation errors. They can be found in `CFIXX-v2-Build-Fix`
+
 compile programs using the clang++ from release install and set the following flags:
 
 -O2 // required by cfixx
